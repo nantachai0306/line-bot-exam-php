@@ -1,20 +1,85 @@
-<?php
+<?php // callback.php
 
 require "vendor/autoload.php";
 
+require_once('vendor/linecorp/line-bot-sdk/line-bot-sdk-tiny/LINEBotTiny.php');
+
 $access_token = 'C0jYgehR6Baz7bFAvDfO3L671u5Gdk5ms5mUZ5aes7M29+hxXhLoRRYrWDSO6IedYdll3tzLIvZMhIK4cOc5LrSBVMkcZzoYS4AwSg13+B5K42GU5eC4y7sh7N9vNbTTs+MpSsA3pM2I7pbsFOlV1QdB04t89/1O/w1cDnyilFU=';
 
-$channelSecret = '04340bfadf47123a7d1712a11b650dd6';
 
-$idPush = 'ue38ab2c1c699ad1c8174ba463b5b8e'
+// Get POST body content
+$content = file_get_contents('php://input');
 
-$httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient($access_token);
+// Parse JSON
+$events = json_decode($content, true);
 
-$bot = new \LINE\LINEBot($httpClient, ['channelSecret' => $channelSecret]);
+// Validate parsed JSON data
+if (!is_null($events['events'])) {
 
-$textMessageBuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder('hello world');
+// Loop through each event
 
-$response = $bot->pushMessage($idPush, $textMessageBuilder);
+foreach ($events['events'] as $event) {
 
+// Reply only when message sent is in 'text' format
 
-echo $response->getHTTPStatus() . ' ' . $response->getRawBody();
+if ($event['type'] == 'message' && $event['message']['type'] == 'text') {
+
+// Get text sent
+
+$text = $event['source']['userId'];
+
+// Get replyToken
+
+$replyToken = $event['replyToken'];
+
+// Build message to reply back
+
+$messages = [
+
+'type' => 'text',
+
+'text' => $text
+
+];
+
+// Make a POST Request to Messaging API to reply to sender
+
+$url = 'https://api.line.me/v2/bot/message/reply';
+
+$data = [
+
+'replyToken' => $replyToken,
+
+'messages' => [$messages],
+
+];
+
+$post = json_encode($data);
+
+$headers = array('Content-Type: application/json', 'Authorization: Bearer ' . $access_token);
+
+$ch = curl_init($url);
+
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+
+$result = curl_exec($ch);
+
+curl_close($ch);
+
+echo $result . "\r\n";
+
+}
+
+}
+
+}
+
+echo "OK";
