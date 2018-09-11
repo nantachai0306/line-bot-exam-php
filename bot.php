@@ -1,1 +1,3 @@
-<?phpecho "I am a LineBotEEP";
+<?php
+echo "I am a LineBotEEP";
+?>
